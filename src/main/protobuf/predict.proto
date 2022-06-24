@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package com.aagmon.demos;
+
+option go_package = "aagmon/kafkaClientP/proto";
+
+message PredictRequest{
+  string recordID = 1;
+  repeated float featuresVector = 4;
+
+}
