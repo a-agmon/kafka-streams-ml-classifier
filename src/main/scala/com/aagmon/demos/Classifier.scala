@@ -2,11 +2,11 @@ package com.aagmon.demos
 
 import ml.dmlc.xgboost4j.LabeledPoint
 import ml.dmlc.xgboost4j.scala.{Booster, DMatrix, XGBoost}
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 
 //wraps the machine learning classifier logic
 object Classifier {
-  val logger = LoggerFactory.getLogger("StreamsClassifierModel")
+  val logger: Logger = LoggerFactory.getLogger("StreamsClassifierModel")
   var model: Option[Booster] = None
 
   def initModel(filename:String): Unit = {
@@ -23,8 +23,15 @@ object Classifier {
 
   def predict(recordID:String, features:Seq[Float]): (String, Float) = {
     val xgbInput = getInputVector(features)
-    val result:Array[Array[Float]] = model.get.predict(xgbInput)
-    (recordID, result(0)(0) )
+    //val result:Array[Array[Float]] = model.get.predict(xgbInput)
+
+    val prediction:Float = model
+      .map(m => m.predict(xgbInput))
+      .map(result => result(0)(0))
+      .getOrElse(-1)
+
+     (recordID, prediction)
   }
+
 
 }
