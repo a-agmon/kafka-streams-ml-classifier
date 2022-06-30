@@ -43,11 +43,7 @@ object Main {
       .map( (_, request) => {
         Classifier.predict(request.recordID, request.featuresVector)
       })
-      .peek((reqId, reqPrediction) => {
-        logger.debug(s"Req:$reqId => $reqPrediction")
-      })
       .to(outputTopic)
-
 
     builder.build()
 
