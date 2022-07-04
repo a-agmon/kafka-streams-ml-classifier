@@ -3,8 +3,7 @@ package com.aagmon.demos
 // was generated with
 // /Users/alonagmon/Downloads/scalapbc-0.11.1/bin/scalapbc -v3.5.1 --scala_out=src/main/scala src/main/protobuf/predict.proto
 import predict.PredictRequest
-
-import org.apache.kafka.streams.scala.kstream.KStream
+import org.apache.kafka.streams.scala.kstream.{Branched, KStream}
 import org.apache.kafka.streams.scala.StreamsBuilder
 import org.apache.kafka.streams.{KafkaStreams, KeyValue, StreamsConfig, Topology}
 import org.slf4j.LoggerFactory
@@ -19,13 +18,13 @@ import DomainSerdes._
 
 
 object Main {
-  val logger = LoggerFactory.getLogger("StreamsAppMain")
 
+  val logger = LoggerFactory.getLogger("StreamsAppMain")
   val modelPath = "/Users/alonagmon/MyData/work/golang-projects/vectors_model/fraud_model.bin"
-  Classifier.initModel(modelPath)
+  Classifier.Init(modelPath)
 
   def getKafkaBrokerProperties(appID:String):Properties = {
-    val bootstrapServer:String = scala.util.Properties.envOrElse("KAFKA_SERVER", "127.0.0.1:62036")
+    val bootstrapServer:String = scala.util.Properties.envOrElse("KAFKA_SERVER", "127.0.0.1:54244")
     val conf = new Properties()
     conf.put(StreamsConfig.APPLICATION_ID_CONFIG, appID)
     conf.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer)
@@ -35,7 +34,7 @@ object Main {
   }
 
 
-  def getStreamTopology(inputTopic:String, outputTopic:String):Topology = {
+  def getStreamTopology(inputTopic:String):Topology = {
 
     val builder = new StreamsBuilder()
     val reqStream = builder.stream[String, PredictRequest](inputTopic)
@@ -43,7 +42,9 @@ object Main {
       .map( (_, request) => {
         Classifier.predict(request.recordID, request.featuresVector)
       })
-      .to(outputTopic)
+      .split()
+      .branch((key, risk) => risk >= 0.5 , Branched.withConsumer(stream => stream.to("suspects-topic")))
+      .branch((key, risk) => risk < 0.5 , Branched.withConsumer(stream => stream.to("regular-topic")))
 
     builder.build()
 
@@ -53,7 +54,7 @@ object Main {
 
     logger.info("Starting App")
     val topology: Topology =
-      getStreamTopology("test-topic-1", "test-topic-2")
+      getStreamTopology("test-topic-1")
     val applicationProps = getKafkaBrokerProperties("test-stream-app-1")
     val streams = new KafkaStreams(topology, applicationProps)
 
