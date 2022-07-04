@@ -22,5 +22,10 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.5",
   "org.slf4j" % "slf4j-simple" % "1.7.5",
 
+  // https://mvnrepository.com/artifact/io.circe/circe-core
+  "io.circe" %% "circe-core" % "0.15.0-M1",
+  "io.circe" %% "circe-generic" % "0.15.0-M1",
+  "io.circe" %% "circe-parser" % "0.15.0-M1",
+
 
 )
